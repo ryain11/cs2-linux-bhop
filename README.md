@@ -4,7 +4,11 @@ A simple internal cs2 bhop program for linux achieved my hooking CreateMove.
 
 ## WARNING
 
-If the offsets shifted and the program is not working. You can run the cs2_dumper binary to update the offsets manually and compile from source. Or you can wait for a new commit.
+If the offsets shifted and the program is not working. You can read "Getting Offsets" to find the offsets and update them manually. Or you can wait for a new commit.
+
+## Getting offsets
+
+Open CS2 and run the cs2_dumper file in the console. Wait around 10 second and the offsets will be printed.
 
 ## Features
 
