@@ -29,11 +29,7 @@ int returnPawnAddr(void* self, uint32_t slot, long active, long extra) {
     return 1;
 }
 
-void hkCreateMove(void* self, uint64_t slot, long cmd) {
-
-    if (oCreateMove) {
-        oCreateMove(self, slot, cmd);
-    }
+void hkCreateMove(void* self, uint64_t slot, long cmd) { 
 
     static auto mod = get_module_info("libclient.so");
     static uintptr_t base_address = mod->base;
@@ -86,25 +82,20 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
 
     bool jumpRequested = (*pButtonState1 & IN_JUMP) || (*pButtonState2 & IN_JUMP);
 
-    static int groundTicks = 0;
-
-    if (isOnGround)
-        groundTicks = 2;
-    else if (groundTicks > 0)
-        --groundTicks;
-
-    bool canJump = groundTicks > 0;
-
 
     if (jumpRequested && bhopEnabled) {
-        if (!canJump) { 
+        if (!isOnGround) { 
             subtickJump = 0.0f;
             *pButtonState1 &= ~IN_JUMP;
             pButStatePB1 &= ~IN_JUMP;
             *pButtonState2 &= ~IN_JUMP;
             pButStatePB2 &= ~IN_JUMP;
         } 
-    } 
+    }
+
+    if (oCreateMove) {
+        oCreateMove(self, slot, cmd);
+    }
     
 }
 
