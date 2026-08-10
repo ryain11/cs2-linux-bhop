@@ -74,10 +74,6 @@ void* drawGui(void* arg)
             goto cleanup;
         }
  
-        ImGui::Dummy(ImVec2(0.0f, 10.0f));
-        ImGui::Text("Checkbox is: %s", checkbox_value ? "ON" : "OFF");
-        ImGui::Text("Button clicked %d times", click_count);
- 
         ImGui::End();
  
         ImGui::Render();

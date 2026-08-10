@@ -21,7 +21,6 @@ static FindPawnFn getPlayerPawn = nullptr;
 
 uintptr_t localPlayerPawn = 0;
 
-
 int returnPawnAddr(void* self, uint32_t slot, long active, long extra) { 
 
     localPlayerPawn = reinterpret_cast<uintptr_t>(getPlayerPawn(slot));
@@ -75,25 +74,12 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
     uintptr_t pBaseCmd = *reinterpret_cast<uintptr_t*>(CsgoUserCmdPB + 0x28);
     if (pBaseCmd == 0) return;
 
-    uintptr_t InButtonStatePB = *reinterpret_cast<uintptr_t*>(pBaseCmd + 0x34);
-    if (InButtonStatePB == 0) return;
-
-    uintptr_t pButStatePB1 = (InButtonStatePB + 0x08);
-    uintptr_t pButStatePB2 = (InButtonStatePB + 0x10);
-
-    float subtickJump = ((*reinterpret_cast<uintptr_t*>(pBaseCmd + 0x24)) + 0x24);
-
-
     bool jumpRequested = (*pButtonState1 & IN_JUMP) || (*pButtonState2 & IN_JUMP);
 
-
     if (jumpRequested && bhopEnabled) {
-        if (!isOnGround) { 
-            subtickJump = 0.0f;
+        if (!isOnGround) {
             *pButtonState1 &= ~IN_JUMP;
-            pButStatePB1 &= ~IN_JUMP;
             *pButtonState2 &= ~IN_JUMP;
-            pButStatePB2 &= ~IN_JUMP;
         } 
     } 
     
