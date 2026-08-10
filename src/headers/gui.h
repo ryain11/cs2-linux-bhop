@@ -71,7 +71,6 @@ void* drawGui(void* arg)
         if (ImGui::Button("UNINJECT", button_size))
         {
             click_count++;
-            uninject = true;
             goto cleanup;
         }
  
@@ -93,6 +92,8 @@ void* drawGui(void* arg)
     }
 
     cleanup:
+
+    uninject = true;
  
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

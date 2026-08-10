@@ -158,6 +158,7 @@ void* SetupHook(void* arg) {
 
     while (!uninject) sleep(5);
 
+    funchook_uninstall(funchook, 0);
     funchook_destroy(funchook);
 
     return nullptr;
