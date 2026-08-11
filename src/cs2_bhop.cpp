@@ -3,6 +3,7 @@
 #include "headers/funchook.h"
 #include <vector>
 #include "headers/gui.h"
+#include "headers/offsets.h"
 
 #define IN_JUMP (1ULL << 1)
 
@@ -45,12 +46,9 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
         return;
     }
 
-    uintptr_t f_flags_offset = 0x564;
-    uintptr_t i_health_offset = 0x4BC;
-
     // 3. Get player's current health and flags
-    int32_t health = *reinterpret_cast<int32_t*>(localPlayerPawn + i_health_offset);
-    uint32_t flags  = *reinterpret_cast<uint32_t*>(localPlayerPawn + f_flags_offset);
+    int32_t health = *reinterpret_cast<int32_t*>(localPlayerPawn + offsets::iHealth);
+    uint32_t flags  = *reinterpret_cast<uint32_t*>(localPlayerPawn + offsets::fFlags);
 
     // Ensure player is alive
     if (health <= 0) {
@@ -87,6 +85,11 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
 
 // --- Hook Setup ---
 void* SetupHook(void* arg) {
+    pthread_t thread_id;
+
+    pthread_create(&thread_id, NULL, drawGui, NULL);
+    pthread_detach(thread_id);
+
     const char* bytePattern = "55 89 f7 48 89 e5 41 55 49 89 cd 41 54 49 89 d4 53 48 83 ec 08 e8 ? ? ? ?";
     const char* realCreateMove = "55 48 89 E5 41 57 49 89 D7 41 56 49 89 FE 41 55 41 54 53 89 F3 48 81 EC ? ? ? ? 48 89 BD ? ? ? ? 48 89 95 ? ? ? ? E8 ? ? ? ? 4C 89 FA 89 DE 4C 89 F7";
     const char* playerPawnPattern = "55 48 89 E5 83 FF FF 75 ? 48 8D 05 ? ? ? ? 48 8B 38 48 8B 07 FF 90 10 03 00 00";
@@ -152,11 +155,8 @@ void* SetupHook(void* arg) {
 
 __attribute__((constructor))
 void on_attach() {
-    pthread_t thread1_id, thread2_id;
+    pthread_t thread_id;
     // Spawns worker_thread so on_attach can return safely
-    pthread_create(&thread1_id, NULL, SetupHook, NULL);
-    pthread_detach(thread1_id);
-
-    pthread_create(&thread2_id, NULL, drawGui, NULL);
-    pthread_detach(thread2_id);
+    pthread_create(&thread_id, NULL, SetupHook, NULL);
+    pthread_detach(thread_id);
 }

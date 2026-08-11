@@ -2,7 +2,6 @@
 
 #include <sstream>
 #include <string>
-#include <cstdint>
 #include <dlfcn.h>
 #include <link.h>
 #include <optional>

@@ -1,6 +1,5 @@
 #include <fstream>
 #include <iostream>
-#include <cstdint>
 #include <string>
 #include <dlfcn.h>
 
@@ -12,6 +11,7 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <dirent.h>
+#include "handle.h"
 
 std::string getLibraryDirectory()
 {

@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
         process_vm_readv(pid, &local_iov, 1, &remote_iov, 1, 0);
         std::cerr << "[-] Remote dlerror message: " << err_msg << "\n";
     }
-}
+    }
 
     // Step 6: Detach and restore process
     ptrace(PTRACE_DETACH, pid, NULL, NULL);

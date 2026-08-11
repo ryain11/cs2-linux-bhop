@@ -8,7 +8,7 @@ If the offsets shifted and the program is not working. You can read "Getting Off
 
 ## Getting offsets
 
-Open CS2 and run the cs2_dumper file in the console. Wait around 10 second and the offsets will be printed.
+Open CS2 and run the cs2_dumper file in the console. Wait around 10 second and the offsets will be printed. Input those offsets into offsets.h located in src/headers/
 
 ## Features
 
