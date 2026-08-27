@@ -1,5 +1,7 @@
 #include "headers/cs2_bhop.h"
 #include <sys/mman.h>
+#include <sys/prctl.h>
+#include <signal.h>
 #include "headers/funchook.h"
 #include <vector>
 #include "headers/gui.h"
@@ -65,6 +67,7 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
     
     uint64_t* pButtonState1 = reinterpret_cast<uint64_t*>(pInButtonState + 0x08);
     uint64_t* pButtonState2 = reinterpret_cast<uint64_t*>(pInButtonState + 0x10);
+    uint64_t* pButtonState3 = reinterpret_cast<uint64_t*>(pInButtonState + 0x18);
 
     uintptr_t CsgoUserCmdPB = (cUserCmd + 0x18);
     if (CsgoUserCmdPB == 0) return;
@@ -78,6 +81,7 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
         if (!isOnGround) {
             *pButtonState1 &= ~IN_JUMP;
             *pButtonState2 &= ~IN_JUMP;
+            *pButtonState3 &= ~IN_JUMP;
         } 
     } 
     
@@ -86,7 +90,7 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
 // --- Hook Setup ---
 void* SetupHook(void* arg) {
     pthread_t thread_id;
-
+    // Spawns worker_thread so on_attach can return safely
     pthread_create(&thread_id, NULL, drawGui, NULL);
     pthread_detach(thread_id);
 
@@ -99,7 +103,6 @@ void* SetupHook(void* arg) {
         return nullptr;
     }
 
-    pid_t pid = getpid();
     uintptr_t function_address = FindPatternInModule("libclient.so", realCreateMove);
     if (function_address == 0) {
         return nullptr;

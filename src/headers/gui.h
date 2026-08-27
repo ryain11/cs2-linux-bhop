@@ -4,14 +4,14 @@
 #include <GLFW/glfw3.h>
 #include <cstdio>
 
-bool uninject = false;
+volatile sig_atomic_t uninject = 0;
 bool bhopEnabled = true;
 
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
- 
+
 void* drawGui(void* arg)
 {
     glfwSetErrorCallback(glfw_error_callback);
@@ -41,8 +41,7 @@ void* drawGui(void* arg)
     ImGui_ImplOpenGL3_Init(glsl_version);
  
     bool checkbox_value = false;
-    int click_count = 0;
- 
+
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -70,7 +69,6 @@ void* drawGui(void* arg)
         ImVec2 button_size(ImGui::GetContentRegionAvail().x, 80.0f);
         if (ImGui::Button("UNINJECT", button_size))
         {
-            click_count++;
             goto cleanup;
         }
  
@@ -88,8 +86,6 @@ void* drawGui(void* arg)
     }
 
     cleanup:
-
-    uninject = true;
  
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -97,6 +93,8 @@ void* drawGui(void* arg)
  
     glfwDestroyWindow(window);
     glfwTerminate();
+
+    uninject = 1;
  
     return nullptr;
 }
