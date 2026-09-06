@@ -15,11 +15,36 @@ struct ModuleInfo {
     size_t size = 0;
 };
 
-struct FindModuleCtx {
-    const char* target_name;
-    ModuleInfo result;
-    bool found = false;
-};
+class CCSGOUserCmdPB
+{
+public:
+	uint32_t nHasBits; //0x00
+	char pad_0004[4]; //0x04
+	uint64_t nCachedSize; //0x08
+	char pad_0010[24]; //0x10
+	//class CBaseUserCmdPB* pBaseCmd; //0x28
+	//char pad_0030[16]; //0x30
+}; //Size: 0x0040
+
+class CInButtonState
+{
+public:
+	void* __vftable; //0x00
+	int64_t nValue; //0x08
+	int64_t nValueChanged; //0x10
+	int64_t nValueScroll; //0x18
+	char pad_0020[32]; //0x20
+}; //Size: 0x0040
+
+class CUserCmd
+{
+public:
+	void* __vftable; //0x00
+	char pad_0008[16]; //0x08
+	class CCSGOUserCmdPB csgoUserCmd; //0x18
+	class CInButtonState nButtons; //0x58
+	char pad_0098[24]; //0x98
+}; //Size: 0x00B0
 
 static int phdr_callback(struct dl_phdr_info* info, size_t, void* data) {
     auto* ctx = static_cast<FindModuleCtx*>(data);

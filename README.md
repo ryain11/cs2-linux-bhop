@@ -34,7 +34,7 @@ Step-by-step instructions to get the development environment running:
 
 ```bash
 # Clone the repository
-git clone https://github.com/ryain11/cs2-linux-bhop.git
+git clone --depth 1 https://github.com/ryain11/cs2-linux-bhop.git
 cd cs2-linux-bhop
 
 # Build the project

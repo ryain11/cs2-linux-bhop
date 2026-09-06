@@ -69,24 +69,24 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
     
     bool isOnGround = (flags & FL_ONGROUND) != 0;
 
-    uintptr_t cUserCmd = static_cast<uintptr_t>(cmd);
+    CUserCmd cUserCmd = reinterpret_cast<CUserCmd>(cmd);
     if (cUserCmd == 0) return;
 
-    uintptr_t pInButtonState = (cUserCmd + 0x58);
+    CInButtonState pInButtonState = (cUserCmd.nButtons);
     if (pInButtonState == 0) return;
     
-    uint64_t* pButtonState1 = reinterpret_cast<uint64_t*>(pInButtonState + 0x08);
-    uint64_t* pButtonState2 = reinterpret_cast<uint64_t*>(pInButtonState + 0x10);
+    int64_t pButtonState1 = pInButtonState.nValue;
+    int64_t pButtonState2 = pInButtonState.nValueChanged;
 
-    uintptr_t CsgoUserCmdPB = (cUserCmd + 0x18);
+    uintptr_t CsgoUserCmdPB = (cUserCmd.csgoUserCmd);
     if (CsgoUserCmdPB == 0) return;
 
     bool jumpRequested = (*pButtonState1 & IN_JUMP) || (*pButtonState2 & IN_JUMP);
 
     if (jumpRequested) {
         if (!isOnGround) {
-            *pButtonState1 &= ~IN_JUMP;
-            *pButtonState2 &= ~IN_JUMP;
+            pButtonState1 &= ~IN_JUMP;
+            pButtonState2 &= ~IN_JUMP;
         } 
     } 
     
