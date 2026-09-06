@@ -44,5 +44,4 @@ make all
 
 ## Contributing
 
-This project was made for fun and I don't think of maintaining it anymore. I will only make commits if the offsets shift and the program does not work.
-If you are interested in improving it, fork the project.
+I am currently looking for a way to use the protobuf structures to minimize the jumps missed. If you have a way to do it, or want to improve something else, pull requests are welcome.
