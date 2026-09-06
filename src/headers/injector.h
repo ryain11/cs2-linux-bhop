@@ -1,7 +1,7 @@
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <cstdint>
+#include <cstdlib>
 #include <dlfcn.h>
 
 #include <sys/user.h>
@@ -64,6 +64,20 @@ pid_t findProcessByName(const std::string& name)
         std::string processName;
         if (std::getline(comm, processName) && processName == name)
         {
+            // Verify cmdline to skip wrapper scripts (e.g. cs2.sh)
+            std::ifstream cmdlineFile(
+                std::string("/proc/") + entry->d_name + "/cmdline"
+            );
+            std::string cmdline;
+            if (std::getline(cmdlineFile, cmdline))
+            {
+                // Reject script files
+                if (cmdline.find(".sh") != std::string::npos)
+                {
+                    continue;
+                }
+            }
+
             closedir(dir);
             return static_cast<pid_t>(pid);
         }
@@ -73,7 +87,6 @@ pid_t findProcessByName(const std::string& name)
     return -1;
 }
 
-// 1. Module base address calculation
 uintptr_t get_module_base(pid_t pid, const std::string& module_name) {
     std::string pid_str = (pid == 0) ? "self" : std::to_string(pid);
     std::ifstream maps("/proc/" + pid_str + "/maps");
@@ -149,7 +162,6 @@ uintptr_t call_remote_function(pid_t pid, uintptr_t func_addr,
             // Forward any other signal (e.g. SIGALRM, SIGCHLD) and continue execution
             signal_to_send = sig;
         } else {
-            std::cerr << "[-] Target process exited or crashed during function call\n";
             return 0;
         }
     }
@@ -172,13 +184,11 @@ uintptr_t get_remote_mmap_address(pid_t target_pid) {
     uintptr_t remote_base = get_module_base(target_pid, lib_name);
 
     if (!local_base || !remote_base) {
-        std::cerr << "[-] Failed to locate " << lib_name << " base address\n";
         return 0;
     }
 
     void* local_mmap = dlsym(RTLD_DEFAULT, "mmap");
     if (!local_mmap) {
-        std::cerr << "[-] Failed to resolve local mmap address\n";
         return 0;
     }
 
@@ -186,28 +196,23 @@ uintptr_t get_remote_mmap_address(pid_t target_pid) {
     return remote_base + offset;
 }
 
-// 2. Find remote syscall instruction (0x0f 0x05)
-uintptr_t find_remote_syscall(pid_t pid) {
-    std::ifstream maps("/proc/" + std::to_string(pid) + "/maps");
-    std::string line;
-    uintptr_t start = 0, end = 0;
+uintptr_t get_remote_munmap_address(pid_t target_pid) {
+    std::string lib_name = "libc.so";
 
-    while (std::getline(maps, line)) {
-        if (line.find("r-xp") != std::string::npos || line.find("r--p") != std::string::npos) {
-            if (sscanf(line.c_str(), "%lx-%lx", &start, &end) == 2) {
-                for (uintptr_t addr = start; addr < end - 2; addr += sizeof(long)) {
-                    long data = ptrace(PTRACE_PEEKTEXT, pid, (void*)addr, NULL);
-                    unsigned char* bytes = reinterpret_cast<unsigned char*>(&data);
-                    for (size_t i = 0; i < sizeof(long) - 1; ++i) {
-                        if (bytes[i] == 0x0f && bytes[i + 1] == 0x05) {
-                            return addr + i;
-                        }
-                    }
-                }
-            }
-        }
+    uintptr_t local_base  = get_module_base(0, lib_name);
+    uintptr_t remote_base = get_module_base(target_pid, lib_name);
+
+    if (!local_base || !remote_base) {
+        return 0;
     }
-    return 0;
+
+    void* local_mmap = dlsym(RTLD_DEFAULT, "munmap");
+    if (!local_mmap) {
+        return 0;
+    }
+
+    uintptr_t offset = reinterpret_cast<uintptr_t>(local_mmap) - local_base;
+    return remote_base + offset;
 }
 
 // 3. Resolve remote dlopen address
@@ -224,17 +229,36 @@ uintptr_t get_remote_dlopen_address(pid_t target_pid) {
     }
 
     if (!local_base || !remote_base) {
-        std::cerr << "[-] Failed to locate " << lib_name << " base address\n";
         return 0;
     }
 
     void* local_dlopen = dlsym(RTLD_DEFAULT, "dlopen");
     if (!local_dlopen) {
-        local_dlopen = dlsym(RTLD_DEFAULT, "__libc_dlopen_mode");
+        return 0;
     }
 
+    uintptr_t offset = reinterpret_cast<uintptr_t>(local_dlopen) - local_base;
+    return remote_base + offset;
+}
+
+uintptr_t get_remote_dlclose_address(pid_t target_pid) {
+    std::string lib_name = "libc.so";
+
+    uintptr_t local_base  = get_module_base(0, lib_name);
+    uintptr_t remote_base = get_module_base(target_pid, lib_name);
+
+    if (!local_base || !remote_base) {
+        lib_name = "libdl.so";
+        local_base  = get_module_base(0, lib_name);
+        remote_base = get_module_base(target_pid, lib_name);
+    }
+
+    if (!local_base || !remote_base) {
+        return 0;
+    }
+
+    void* local_dlopen = dlsym(RTLD_DEFAULT, "dlclose");
     if (!local_dlopen) {
-        std::cerr << "[-] Failed to resolve local dlopen address\n";
         return 0;
     }
 
@@ -256,11 +280,21 @@ uintptr_t allocate_remote_memory(pid_t pid, uintptr_t mmap_addr, size_t size) {
     );
 
     if (addr > (uintptr_t)-4095 || addr == 0) {
-        std::cerr << "[-] mmap failed with return code: 0x" << std::hex << addr << std::dec << "\n";
         return 0;
     }
 
     return addr;
+}
+
+uintptr_t deallocate_remote_memory(pid_t pid, uintptr_t munmap_addr, uintptr_t start_address, size_t size) {
+    uintptr_t addr = call_remote_function(
+        pid, munmap_addr,
+        start_address,                                   
+        size,                                
+        0, 0, 0, 0                                  
+    );
+
+    return 0;
 }
 
 // 5. Write data into target process memory space
@@ -280,5 +314,13 @@ uintptr_t execute_remote_dlopen(pid_t pid, uintptr_t dlopen_addr, uintptr_t str_
         str_addr, // Arg 1: path string address
         RTLD_NOW, // Arg 2: flags
         0, 0, 0, 0
+    );
+}
+
+uintptr_t execute_remote_dlclose(pid_t pid, uintptr_t dlclose_addr, uintptr_t handle) {
+    return call_remote_function(
+        pid, dlclose_addr,
+        handle, 0,
+        0, 0, 0, 0 
     );
 }
