@@ -20,7 +20,7 @@ int inject(const char*& code) {
     pid_t pid = findProcessByName("cs2");
 
     if (pid == -1) {
-        code = "Error: Open CS2 before injecting";
+        code = "Open CS2 before injecting";
         return 1;
     }
 
@@ -93,6 +93,7 @@ int inject(const char*& code) {
 void uninject(const char*& code) {
     pid_t pid = findProcessByName("cs2");
     if (pid == -1) {
+        code = "Open CS2 before injecting";
         initialized = false;
         return;
     }
