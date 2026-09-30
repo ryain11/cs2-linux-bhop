@@ -2,4 +2,4 @@
 
 git pull
 
-make all
+make

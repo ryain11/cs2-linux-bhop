@@ -15,6 +15,12 @@ struct ModuleInfo {
     size_t size = 0;
 };
 
+struct FindModuleCtx {
+    const char* target_name;
+    ModuleInfo result;
+    bool found = false;
+};
+
 class CCSGOUserCmdPB
 {
 public:

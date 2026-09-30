@@ -1,4 +1,4 @@
-LIBFLAGS = -shared -fPIC -L./src/staticlibs/ ./src/staticlibs/libfunchook.a -lpthread -ldl -ldistorm -std=c++20
+LIBFLAGS = -shared -fPIC -L./src/staticlibs/ -lfunchook -ldistorm -lpthread -ldl -std=c++20
 BINFLAGS = ./src/staticlibs/libglfw3.a -ldl -lpthread -lGL
 
 IMGUI = src/imgui/imgui_draw.cpp src/imgui/imgui.cpp src/imgui/imgui_impl_opengl3.cpp src/imgui/imgui_tables.cpp src/imgui/imgui_impl_glfw.cpp src/imgui/imgui_widgets.cpp

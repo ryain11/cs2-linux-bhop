@@ -38,7 +38,7 @@ git clone --depth 1 https://github.com/ryain11/cs2-linux-bhop.git
 cd cs2-linux-bhop
 
 # Build the project
-make all
+make
 
 ```
 

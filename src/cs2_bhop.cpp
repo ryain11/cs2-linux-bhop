@@ -17,7 +17,7 @@
 using PawnHelperFn = int(*)(void* self, uint32_t slot, long active, long extra);
 static PawnHelperFn PawnHelper = nullptr;
 
-using CreateMoveFn = void(*)(void* self, uint64_t slot, long cmd);
+using CreateMoveFn = void(*)(void* self, uint64_t slot, CUserCmd cmd);
 static CreateMoveFn oCreateMove = nullptr;
 
 using FindPawnFn = void*(*)(int pawn);
@@ -40,7 +40,7 @@ int returnPawnAddr(void* self, uint32_t slot, long active, long extra) {
     return 1;
 }
 
-void hkCreateMove(void* self, uint64_t slot, long cmd) {
+void hkCreateMove(void* self, uint64_t slot, CUserCmd cmd) {
     if (!flags.bhopEnabled) return;
 
     if (oCreateMove) {
@@ -50,11 +50,7 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
     static auto mod = get_module_info("libclient.so");
     static uintptr_t base_address = mod->base;
 
-    if (base_address == 0) {
-        return;
-    }
-
-    if (localPlayerPawn == 0) {
+    if (!base_address|| !localPlayerPawn) {
         return;
     }
 
@@ -69,19 +65,16 @@ void hkCreateMove(void* self, uint64_t slot, long cmd) {
     
     bool isOnGround = (flags & FL_ONGROUND) != 0;
 
-    CUserCmd cUserCmd = reinterpret_cast<CUserCmd>(cmd);
-    if (cUserCmd == 0) return;
-
-    CInButtonState pInButtonState = (cUserCmd.nButtons);
-    if (pInButtonState == 0) return;
+    CInButtonState pInButtonState = cmd.nButtons;
+    if (!&pInButtonState) return;
     
     int64_t pButtonState1 = pInButtonState.nValue;
     int64_t pButtonState2 = pInButtonState.nValueChanged;
 
-    uintptr_t CsgoUserCmdPB = (cUserCmd.csgoUserCmd);
-    if (CsgoUserCmdPB == 0) return;
+    //uintptr_t CsgoUserCmdPB = (cUserCmd.csgoUserCmd);
+    //if (CsgoUserCmdPB == 0) return;
 
-    bool jumpRequested = (*pButtonState1 & IN_JUMP) || (*pButtonState2 & IN_JUMP);
+    bool jumpRequested = (pButtonState1 & IN_JUMP) || (pButtonState2 & IN_JUMP);
 
     if (jumpRequested) {
         if (!isOnGround) {
